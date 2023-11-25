@@ -13,11 +13,7 @@ $stmt = $conexion->prepare($sql);
 $stmt->execute();
 
 // Comprobar si hay resultados
-if ($rowCount > 0) {
-  echo "Se encontraron $rowCount lugares";
-} else {
-  echo "No se encontraron lugares";
-}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -39,6 +35,14 @@ if ($rowCount > 0) {
 </style>
 
 <body>
+  <?php
+  include 'menu.php';
+  if ($rowCount > 0) {
+    echo "Se encontraron $rowCount lugares";
+  } else {
+    echo "No se encontraron lugares";
+  }
+  ?>
   <div id="mapa"></div>
   <script>
     // Crear el mapa y establecer la ubicación y el zoom inicial

@@ -11,12 +11,6 @@ $stmt = $conexion->prepare($sql);
 // Ejecutar la consulta SQL
 $stmt->execute();
 
-// Comprobar si hay resultados
-if ($rowCount > 0) {
-  echo "Se encontraron $rowCount lugares";
-} else {
-  echo "No se encontra<ron lugares";
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -29,6 +23,16 @@ if ($rowCount > 0) {
 </head>
 
 <body>
+  <?php
+  include 'menu.php';
+
+  // Comprobar si hay resultados
+  if ($rowCount > 0) {
+    echo "Se encontraron $rowCount lugares";
+  } else {
+    echo "No se encontra<ron lugares";
+  }
+  ?>
   <div id="map"></div>
 
   <script>

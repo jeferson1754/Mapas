@@ -9,6 +9,9 @@
 </head>
 
 <body>
+    <?php
+    include 'menu.php';
+    ?>
     <!-- Aquí se mostrará el mapa -->
     <div id="map" style="width: 100%; height: 400px;"></div>
 
@@ -29,7 +32,7 @@
     </form>
     <script>
         if ("geolocation" in navigator) {
-            navigator.geolocation.getCurrentPosition(function (position) {
+            navigator.geolocation.getCurrentPosition(function(position) {
                 // Obtener las coordenadas
                 var latitud = position.coords.latitude;
                 var longitud = position.coords.longitude;
@@ -60,14 +63,16 @@
                 popupAnchor: [-3, -76],
             });
 
-            marker = L.marker(e.latlng, { icon: ubicacionIcono }).addTo(map)
+            marker = L.marker(e.latlng, {
+                    icon: ubicacionIcono
+                }).addTo(map)
                 .bindPopup("Estás dentro de " + radius + " metros de este punto").openPopup();
 
             L.circle(e.latlng, radius).addTo(map);
 
             // Establece la vista con el máximo nivel de zoom con animación
             map.flyTo(e.latlng, 18, {
-                duration: 2,  // Duración de la animación en segundos
+                duration: 2, // Duración de la animación en segundos
             });
         }
 
@@ -81,7 +86,11 @@
         }).addTo(map);
 
         function obtenerUbicacionActual() {
-            map.locate({ setView: false, maxZoom: 18, enableHighAccuracy: true });
+            map.locate({
+                setView: false,
+                maxZoom: 18,
+                enableHighAccuracy: true
+            });
         }
 
         function agregarMarcador() {
@@ -90,20 +99,27 @@
             }
 
             // Obtén la ubicación actual y agrega un nuevo marcador sin animación
-            map.locate({ setView: false, maxZoom: 18, enableHighAccuracy: true, watch: false });
+            map.locate({
+                setView: false,
+                maxZoom: 18,
+                enableHighAccuracy: true,
+                watch: false
+            });
 
-            map.on('locationfound', function (e) {
+            map.on('locationfound', function(e) {
                 var ubicacionMarcador = e.latlng;
                 marker = L.marker(ubicacionMarcador).addTo(map)
                     .bindPopup("Marcador en esta ubicación").openPopup();
 
                 // Establece la vista en la ubicación del marcador con el máximo nivel de zoom sin animación
-                map.setView(ubicacionMarcador, 18, { animate: false });
+                map.setView(ubicacionMarcador, 18, {
+                    animate: false
+                });
             });
         }
 
         // Evento de clic en el mapa para agregar marcador
-        map.on('click', function (e) {
+        map.on('click', function(e) {
             agregarMarcadorEnUbicacionClicada(e.latlng);
         });
         /*

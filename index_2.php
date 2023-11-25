@@ -7,10 +7,13 @@
 </head>
 
 <body>
+    <?php
+    include 'menu.php';
+    ?>
     <div id="map"></div>
     <button id="get-location-btn">Obtener Ubicación Actual</button>
     <br>
-       <form action="insertar_marcador.php" method="POST">
+    <form action="insertar_marcador.php" method="POST">
         <label for="name">Nombre:</label>
         <input type="text" id="name" name="name" required>
         <label for="address">Dirección:</label>
@@ -24,8 +27,7 @@
     </form>
 
     <script src="script.js"></script>
-    <script
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBDaeWicvigtP9xPv919E-RNoxfvC-Hqik&callback=iniciarMap"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBDaeWicvigtP9xPv919E-RNoxfvC-Hqik&callback=iniciarMap"></script>
 </body>
 
 </html>
