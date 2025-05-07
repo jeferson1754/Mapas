@@ -25,12 +25,11 @@ $stmt->execute();
 <body>
   <?php
   include 'menu.php';
-
   // Comprobar si hay resultados
   if ($rowCount > 0) {
     echo "Se encontraron $rowCount lugares";
   } else {
-    echo "No se encontra<ron lugares";
+    echo "No se encontraron lugares";
   }
   ?>
   <div id="map"></div>
