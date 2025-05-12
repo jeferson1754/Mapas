@@ -28,14 +28,16 @@
                 <li class="nav-item active"> <a class="nav-link" href="../Mapas/">Mapa Simple</a> </li>
             </ul>
             <ul class="navbar-nav mr-auto">
-                <li class="nav-item active"> <a class="nav-link" href="../Mapas/mapa.php">Mapa Simple con U.</a> </li>
+                <li class="nav-item active"> <a class="nav-link" href="../Mapas/mapa_base.php">Mapa con Ubicaciones</a> </li>
             </ul>
             <ul class="navbar-nav mr-auto">
-                <li class="nav-item active"> <a class="nav-link" href="../Mapas/index_2.php">Google Maps</a> </li>
+                <li class="nav-item active"> <a class="nav-link" href="../Mapas/editar_mapa.php">Editar</a> </li>
             </ul>
+            <!--
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item active"> <a class="nav-link" href="../Mapas/mapa copy.php">Google Maps con U.</a> </li>
             </ul>
+-->
         </div>
     </nav>
 </body>

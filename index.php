@@ -1,3 +1,32 @@
+<?php
+// Incluir archivo de conexión a la base de datos
+include 'bd.php';
+
+// Preparar la consulta SQL de manera segura
+$sql = "SELECT lat, lng, name, address FROM markers";
+
+// Preparar y ejecutar la consulta usando consultas preparadas
+$stmt = $conexion->prepare($sql);
+$stmt->execute();
+
+// Obtener el resultado
+$result = $stmt->get_result();
+$rowCount = $result->num_rows;
+
+// Almacenar los marcadores en un array para usarlos en JavaScript
+$markers = [];
+while ($row = $result->fetch_assoc()) {
+    $markers[] = [
+        'lat' => (float)$row['lat'],
+        'lng' => (float)$row['lng'],
+        'name' => htmlspecialchars($row['name']),
+        'image' => htmlspecialchars($row['address']) // Aquí ahora es la ruta de la imagen
+    ];
+}
+
+// Cerrar la consulta
+$stmt->close();
+?>
 <!DOCTYPE html>
 <html lang="es">
 
@@ -65,12 +94,14 @@
             position: relative;
             width: 100%;
             height: 500px;
+            margin-bottom: 20px;
         }
 
         #map {
             width: 100%;
             height: 100%;
             z-index: 1;
+            border-radius: 10px;
         }
 
         .controls-overlay {
@@ -105,11 +136,6 @@
 
         .map-button i {
             font-size: 18px;
-        }
-
-        .active {
-            background: var(--primary-color);
-            color: white;
         }
 
         .form-container {
@@ -292,13 +318,44 @@
 
 <body>
     <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-map-marked-alt"></i> Mapa Interactivo</h1>
-            <p>Explora y marca ubicaciones en tiempo real</p>
-        </div>
 
         <?php include 'menu.php'; ?>
+        <div class="form-container">
+            <form action="insertar_marcador.php" method="POST" id="markerForm" enctype="multipart/form-data">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name"><i class="fas fa-tag"></i> Nombre del lugar:</label>
+                        <input type="text" id="name" name="name" placeholder="Ej: Casa" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="image"><i class="fas fa-image"></i> Subir imagen:</label>
+                        <input type="file" id="image" name="image" accept="image/*" required>
+                    </div>
+                </div>
 
+                <div class="coordinates-container">
+                    <div class="coordinates-title">
+                        <i class="fa-solid fa-location-dot"></i> Coordenadas
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group coord-input">
+                            <label for="lati">Latitud:</label>
+                            <input type="text" id="lati" name="lati">
+                        </div>
+                        <div class="form-group coord-input">
+                            <label for="long">Longitud:</label>
+                            <input type="text" id="long" name="long">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row" style="justify-content: flex-end; margin-top: 5px;">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-plus-circle"></i> Agregar marcador
+                    </button>
+                </div>
+            </form>
+        </div>
         <div class="map-container">
             <div id="map"></div>
             <div class="controls-overlay">
@@ -311,53 +368,14 @@
                 <button class="map-button" id="centerMap" title="Centrar mapa">
                     <i class="fas fa-crosshairs"></i>
                 </button>
+                <button class="map-button" id="centerUserLocation" title="Centrar en mi ubicación">
+                    <i class="fas fa-location-arrow"></i>
+                </button>
+
             </div>
             <div class="tooltip" id="tooltip"></div>
         </div>
 
-        <div class="form-container">
-            <form action="insertar_marcador.php" method="POST" id="markerForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="name"><i class="fas fa-tag"></i> Nombre del lugar:</label>
-                        <input type="text" id="name" name="name" placeholder="Ej: Casa" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="address"><i class="fas fa-map-pin"></i> Dirección:</label>
-                        <input type="text" id="address" name="address" placeholder="Ej: Av. Principal 123" required>
-                    </div>
-                </div>
-
-                <div class="coordinates-container">
-                    <div class="coordinates-title">
-                        <i class="fas fa-location-dot"></i> Coordenadas
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group coord-input">
-                            <label for="lati">Latitud:</label>
-                            <input type="text" id="lati" name="lati" readonly>
-                        </div>
-                        <div class="form-group coord-input">
-                            <label for="long">Longitud:</label>
-                            <input type="text" id="long" name="long" readonly>
-                        </div>
-                        <button type="button" class="btn btn-location" onclick="obtenerUbicacionActual()">
-                            <i class="fas fa-location-crosshairs"></i> Ubicación actual
-                        </button>
-                    </div>
-                </div>
-
-                <div class="form-row" style="justify-content: flex-end; margin-top: 20px;">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-plus-circle"></i> Agregar marcador
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <div class="footer">
-            <p>&copy; 2025 Sistema de Mapas Interactivos | Desarrollado con <i class="fas fa-heart" style="color: #e74c3c;"></i></p>
-        </div>
     </div>
 
     <div class="notification" id="notification">
@@ -368,17 +386,19 @@
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         // Inicialización del mapa
-        var map = L.map('map').setView([-33.4489, -70.6693], 13);
+        var map = L.map('map').setView([-33.4889, -70.6693], 11);
         var marker = null;
         var userLocationMarker = null;
         var userLocationCircle = null;
-        var initialLocation = [-33.4489, -70.6693];
+        var initialLocation = [-33.4889, -70.6693];
 
         // Configuración de la capa base del mapa
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
             maxZoom: 19
         }).addTo(map);
+
 
         // Iconos personalizados
         var userIcon = L.icon({
@@ -399,19 +419,32 @@
         });
 
         document.getElementById('centerMap').addEventListener('click', function() {
-            map.setView(initialLocation, 13);
-            showNotification('Mapa centrado en la ubicación predeterminada', 'success');
+            map.setView(initialLocation, 11);
+            showNotification('Mapa centrado en la vista predeterminada', 'success');
         });
+
+        document.getElementById('centerUserLocation').addEventListener('click', function() {
+            if (userLocationMarker) {
+                map.flyTo(userLocationMarker.getLatLng(), 16, {
+                    duration: 1.5
+                });
+                userLocationMarker.openPopup();
+                showNotification('Mapa centrado en tu ubicación actual', 'success');
+            } else {
+                showNotification('Tu ubicación aún no ha sido detectada', 'error');
+            }
+        });
+
 
         // Función para mostrar una notificación
         function showNotification(message, type = 'success') {
             const notification = document.getElementById('notification');
             const notificationText = document.getElementById('notificationText');
-            
+
             notification.className = 'notification';
             notification.classList.add('show');
             notificationText.textContent = message;
-            
+
             if (type === 'success') {
                 notification.classList.add('notification-success');
                 notification.querySelector('i').className = 'fas fa-check-circle';
@@ -419,26 +452,16 @@
                 notification.classList.add('notification-error');
                 notification.querySelector('i').className = 'fas fa-exclamation-circle';
             }
-            
+
             setTimeout(function() {
                 notification.classList.remove('show');
             }, 3000);
         }
 
-        // Función para obtener la ubicación actual
-        function obtenerUbicacionActual() {
-            showNotification('Obteniendo ubicación...', 'success');
-            
-            map.locate({
-                setView: false,
-                maxZoom: 18,
-                enableHighAccuracy: true
-            });
-        }
 
         // Controlador de eventos cuando se encuentra la ubicación
         function onLocationFound(e) {
-            const radius = e.accuracy / 2;
+            const radius = 100;
             const latitud = e.latlng.lat.toFixed(6);
             const longitud = e.latlng.lng.toFixed(6);
 
@@ -454,11 +477,23 @@
                 map.removeLayer(userLocationCircle);
             }
 
+            var currentUserIcon = L.icon({
+                iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-pushpin.png'
+                    , // ícono de usuario (puedes cambiarlo)
+                iconSize: [30, 30], // tamaño más grande que los otros marcadores
+                iconAnchor: [15, 30], // punto del icono que se ancla al mapa
+                popupAnchor: [0, -30] // posición del popup respecto al icono
+            });
+
+
             // Crear nuevo marcador y círculo
-            userLocationMarker = L.marker(e.latlng, { icon: userIcon })
+            userLocationMarker = L.marker(e.latlng, {
+                    icon: currentUserIcon
+                })
                 .addTo(map)
                 .bindPopup(`<strong>Tu ubicación actual</strong><br>Precisión: ${radius.toFixed(0)} metros`)
                 .openPopup();
+
 
             userLocationCircle = L.circle(e.latlng, {
                 radius: radius,
@@ -466,6 +501,8 @@
                 fillColor: '#3498db',
                 fillOpacity: 0.15
             }).addTo(map);
+
+
 
             // Animar el movimiento del mapa a la ubicación encontrada
             map.flyTo(e.latlng, 16, {
@@ -505,11 +542,11 @@
 
         // Tooltip para mostrar coordenadas al mover el mouse
         const tooltip = document.getElementById('tooltip');
-        
+
         map.on('mousemove', function(e) {
             const lat = e.latlng.lat.toFixed(6);
             const lng = e.latlng.lng.toFixed(6);
-            
+
             tooltip.innerText = `Lat: ${lat}, Lng: ${lng}`;
             tooltip.style.left = (e.containerPoint.x + 15) + 'px';
             tooltip.style.top = (e.containerPoint.y - 25) + 'px';
@@ -539,7 +576,7 @@
         document.getElementById('markerForm').addEventListener('submit', function(e) {
             const lat = document.getElementById('lati').value;
             const lng = document.getElementById('long').value;
-            
+
             if (!lat || !lng) {
                 e.preventDefault();
                 showNotification('Debes seleccionar una ubicación en el mapa', 'error');
@@ -549,6 +586,38 @@
         // Registrar eventos de localización
         map.on('locationfound', onLocationFound);
         map.on('locationerror', onLocationError);
+
+        // Cargar marcadores desde PHP
+        const dbMarkers = <?php echo json_encode($markers); ?>;
+
+        const markersGroup = L.layerGroup();
+
+        dbMarkers.forEach(function(point) {
+            const popupContent = `
+  <strong>${point.name}</strong><br>
+  <div style="text-align: center;">
+    <img src="${point.image}" alt="imagen" width="50" style="margin-top: 5px; border: 1px solid #333; border-radius: 2px;">
+  </div>
+`;
+
+
+            L.marker([point.lat, point.lng])
+                .bindPopup(popupContent)
+                .addTo(markersGroup);
+        });
+
+        markersGroup.addTo(map);
+
+
+        // Registrar eventos de localización
+        map.on('locationfound', onLocationFound);
+        map.on('locationerror', onLocationError);
+
+        // Intentar ubicar al usuario automáticamente al cargar el mapa
+        map.locate({
+            setView: true,
+            maxZoom: 20
+        });
     </script>
 </body>
 
