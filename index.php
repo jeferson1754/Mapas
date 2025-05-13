@@ -478,8 +478,7 @@ $stmt->close();
             }
 
             var currentUserIcon = L.icon({
-                iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-pushpin.png'
-                    , // ícono de usuario (puedes cambiarlo)
+                iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-pushpin.png', // ícono de usuario (puedes cambiarlo)
                 iconSize: [30, 30], // tamaño más grande que los otros marcadores
                 iconAnchor: [15, 30], // punto del icono que se ancla al mapa
                 popupAnchor: [0, -30] // posición del popup respecto al icono
@@ -516,8 +515,6 @@ $stmt->close();
         function onLocationError(e) {
             showNotification('Error al obtener la ubicación: ' + e.message, 'error');
         }
-
-        // Evento de clic en el mapa para seleccionar ubicación
         map.on('click', function(e) {
             const latitud = e.latlng.lat.toFixed(6);
             const longitud = e.latlng.lng.toFixed(6);
@@ -536,6 +533,24 @@ $stmt->close();
                 .addTo(map)
                 .bindPopup('Ubicación seleccionada')
                 .openPopup();
+
+            // Llamar a Nominatim
+            fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitud}&lon=${longitud}&format=json`)
+                .then(res => res.json())
+                .then(data => {
+                    const address = data.address;
+                    let direccion = `
+                ${address.house_number ? 'N° de Casa: ' + address.house_number + '<br>' : ''}
+                Calle: ${address.road || 'N/A'}<br>
+                Ciudad: ${address.city || address.town || address.village || 'N/A'}<br>
+                Región: ${address.state || 'N/A'}<br>
+                País: ${address.country || 'N/A'}
+            `;
+                    marker.bindPopup(direccion).openPopup();
+                })
+                .catch(error => {
+                    console.error('Error al obtener dirección:', error);
+                });
 
             showNotification('Ubicación seleccionada en el mapa', 'success');
         });

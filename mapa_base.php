@@ -355,6 +355,7 @@ $stmt->close();
                           <tr>
                             <th class="text-center">Ubicación</th>
                             <th class="text-center">Imagen</th>
+                            <th class="text-center">Dirección</th> <!-- Nueva columna -->
                             <th class="text-center">Acción</th>
                           </tr>
                         </thead>
@@ -365,8 +366,9 @@ $stmt->close();
                               <td class="text-center">
                                 <img src="<?php echo $marker['image']; ?>" class="img-thumbnail" alt="imagen" width="50">
                               </td>
+                              <td class="text-center" id="direccion-<?php echo $index; ?>">Cargando...</td> <!-- Nueva celda para la dirección -->
                               <td class="text-center">
-                                <button class="btn btn-sm btn-outline-info" onclick="centrarEn(<?php echo $marker['lat']; ?>, <?php echo $marker['lng']; ?>, '<?php echo addslashes($marker['name']); ?>')">
+                                <button class="btn btn-sm btn-outline-info" onclick="centrarEn(<?php echo $marker['lat']; ?>, <?php echo $marker['lng']; ?>, '<?php echo addslashes($marker['name']); ?>', <?php echo $index; ?>)">
                                   <i class="fas fa-crosshairs me-1"></i>Ver
                                 </button>
                               </td>
@@ -374,6 +376,43 @@ $stmt->close();
                           <?php endforeach; ?>
                         </tbody>
                       </table>
+
+                      <script>
+                        // Función para obtener la dirección utilizando latitud y longitud
+                        function obtenerDireccion(lat, lng, index) {
+                          fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
+                            .then(res => res.json())
+                            .then(data => {
+                              const address = data.address;
+                              let direccion = `
+                                ${address.road ? address.road + ' ' + (address.house_number || '') : ''} 
+                                ${address.city || address.town || address.village || ' '}
+                              `;
+
+                              // Actualizar la dirección en la tabla
+                              document.getElementById('direccion-' + index).innerHTML = direccion;
+                            })
+                            .catch(error => {
+                              console.error('Error al obtener dirección:', error);
+                              document.getElementById('direccion-' + index).innerHTML = 'Dirección no disponible';
+                            });
+                        }
+
+                        // Función para centrar en el marcador y cargar la dirección
+                        function centrarEn(lat, lng, name, index) {
+                          // Centramos el mapa en las coordenadas
+                          mapa.setView([lat, lng], 16);
+
+                          // Llamamos a la función para obtener la dirección
+                          obtenerDireccion(lat, lng, index);
+                        }
+
+                        // Llamar a la función obtenerDirección para cada marcador al cargar la página
+                        <?php foreach ($markers as $index => $marker): ?>
+                          obtenerDireccion(<?php echo $marker['lat']; ?>, <?php echo $marker['lng']; ?>, <?php echo $index; ?>);
+                        <?php endforeach; ?>
+                      </script>
+
                     </div>
                   </div>
                 <?php else: ?>
