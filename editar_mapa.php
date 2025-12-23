@@ -58,26 +58,27 @@ $stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestión de Ubicaciones</title>
-  
+
   <!-- Bootstrap CSS -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-  
+
   <!-- Font Awesome para iconos -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  
+
   <!-- Animate.css para animaciones -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
-  
+
   <!-- SweetAlert2 para diálogos mejorados -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.5/sweetalert2.min.css" rel="stylesheet">
-  
+
   <!-- Leaflet CSS -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" rel="stylesheet">
-  
+
   <style>
     :root {
       --primary-color: #3498db;
@@ -87,14 +88,14 @@ $stmt->close();
       --light-color: #ecf0f1;
       --transition-speed: 0.3s;
     }
-    
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #f8f9fa;
       color: #333;
       padding-top: 20px;
     }
-    
+
     .location-container {
       background-color: white;
       border-radius: 10px;
@@ -103,11 +104,11 @@ $stmt->close();
       margin-bottom: 30px;
       transition: transform var(--transition-speed);
     }
-    
+
     .location-container:hover {
       transform: translateY(-5px);
     }
-    
+
     .section-title {
       position: relative;
       margin-bottom: 30px;
@@ -115,7 +116,7 @@ $stmt->close();
       color: var(--dark-color);
       font-weight: 600;
     }
-    
+
     .section-title:after {
       content: '';
       position: absolute;
@@ -126,16 +127,16 @@ $stmt->close();
       background: var(--primary-color);
       border-radius: 2px;
     }
-    
+
     .location-table {
       border-radius: 8px;
       overflow: hidden;
     }
-    
+
     .table {
       margin-bottom: 0;
     }
-    
+
     .table thead th {
       background-color: var(--dark-color);
       color: white;
@@ -144,20 +145,20 @@ $stmt->close();
       padding: 15px;
       white-space: nowrap;
     }
-    
+
     .table tbody tr {
       transition: background-color var(--transition-speed);
     }
-    
+
     .table tbody tr:hover {
       background-color: rgba(52, 152, 219, 0.05);
     }
-    
+
     .table td {
       padding: 15px;
       vertical-align: middle;
     }
-    
+
     .location-img {
       border-radius: 6px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -166,12 +167,12 @@ $stmt->close();
       height: 80px;
       object-fit: cover;
     }
-    
+
     .location-img:hover {
       transform: scale(1.05);
       cursor: pointer;
     }
-    
+
     .btn {
       border-radius: 6px;
       font-weight: 500;
@@ -179,35 +180,35 @@ $stmt->close();
       transition: all var(--transition-speed);
       margin-right: 5px;
     }
-    
+
     .btn-primary {
       background-color: var(--primary-color);
       border-color: var(--primary-color);
     }
-    
+
     .btn-primary:hover {
       background-color: #2980b9;
       border-color: #2980b9;
       transform: translateY(-2px);
       box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
     }
-    
+
     .btn-danger {
       background-color: var(--danger-color);
       border-color: var(--danger-color);
     }
-    
+
     .btn-danger:hover {
       background-color: #c0392b;
       border-color: #c0392b;
       transform: translateY(-2px);
       box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
     }
-    
+
     .btn-sm i {
       margin-right: 5px;
     }
-    
+
     #map {
       height: 400px;
       border-radius: 10px;
@@ -215,7 +216,7 @@ $stmt->close();
       margin-top: 20px;
       margin-bottom: 20px;
     }
-    
+
     .empty-state {
       padding: 60px 20px;
       text-align: center;
@@ -223,99 +224,89 @@ $stmt->close();
       border-radius: 10px;
       border: 2px dashed #ddd;
     }
-    
+
     .empty-state i {
       font-size: 3rem;
       color: #ccc;
       margin-bottom: 15px;
     }
-    
+
     .empty-state h4 {
       margin-bottom: 15px;
       color: #777;
     }
-    
+
     .card-scroll {
       max-height: 600px;
       overflow-y: auto;
       scrollbar-width: thin;
     }
-    
+
     /* Estilo para scrollbar personalizado */
     .card-scroll::-webkit-scrollbar {
       width: 6px;
     }
-    
+
     .card-scroll::-webkit-scrollbar-track {
       background: #f1f1f1;
       border-radius: 10px;
     }
-    
+
     .card-scroll::-webkit-scrollbar-thumb {
       background: #ccc;
       border-radius: 10px;
     }
-    
+
     .card-scroll::-webkit-scrollbar-thumb:hover {
       background: #aaa;
     }
-    
+
     /* Vista previa de imagen ampliada */
     .img-preview-overlay {
+      display: none;
+      /* Se oculta por defecto */
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.8);
-      display: flex;
-      align-items: center;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
       justify-content: center;
-      z-index: 9999;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s;
+      align-items: center;
     }
-    
+
     .img-preview-overlay.active {
-      opacity: 1;
-      visibility: visible;
+      display: flex;
+      /* Se muestra al añadir la clase */
     }
-    
+
     .img-preview-content {
       max-width: 90%;
       max-height: 90%;
     }
-    
+
     .img-preview-content img {
-      max-width: 100%;
+      max-width: 90%;
       max-height: 90vh;
-      border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
-    
+
     .preview-close {
       position: absolute;
-      top: 20px;
-      right: 20px;
+      top: 50px;
+      right: 30px;
+      font-size: 40px;
       color: white;
-      font-size: 24px;
       cursor: pointer;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: rgba(255, 255, 255, 0.2);
-      border-radius: 50%;
-      transition: all 0.3s;
+      z-index: 1001;
+      /* Debe ser mayor que el contenido */
     }
-    
+
     .preview-close:hover {
       background-color: rgba(255, 255, 255, 0.4);
       transform: rotate(90deg);
     }
-    
+
     /* Loader para operaciones */
     .loader-overlay {
       position: fixed;
@@ -332,12 +323,12 @@ $stmt->close();
       visibility: hidden;
       transition: all 0.3s;
     }
-    
+
     .loader-overlay.active {
       opacity: 1;
       visibility: visible;
     }
-    
+
     .loader {
       width: 50px;
       height: 50px;
@@ -346,86 +337,105 @@ $stmt->close();
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
-    
+
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
     }
-    
+
     /* Animaciones para elementos nuevos o eliminados */
     .fade-in {
       animation: fadeIn 0.5s;
     }
-    
+
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
-    
+
     .fade-out {
       animation: fadeOut 0.5s;
     }
-    
+
     @keyframes fadeOut {
-      from { opacity: 1; transform: translateY(0); }
-      to { opacity: 0; transform: translateY(20px); }
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      to {
+        opacity: 0;
+        transform: translateY(20px);
+      }
     }
-    
+
     /* Estilos para dispositivos móviles */
     @media (max-width: 767.98px) {
       .table-responsive {
         border: none;
       }
-      
-      .table th:nth-child(1), 
+
+      .table th:nth-child(1),
       .table td:nth-child(1) {
         display: none;
       }
-      
+
       .btn {
         padding: 6px 12px;
         font-size: 0.875rem;
       }
-      
+
       .location-img {
         width: 60px;
         height: 60px;
       }
-      
+
       .section-title {
         font-size: 1.5rem;
       }
     }
-    
+
     /* Modo oscuro - activado con clase .dark-mode en el body */
     body.dark-mode {
       background-color: #121212;
       color: #e0e0e0;
     }
-    
+
     body.dark-mode .location-container {
       background-color: #1e1e1e;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     }
-    
+
     body.dark-mode .table {
       color: #e0e0e0;
     }
-    
+
     body.dark-mode .table tbody tr:hover {
       background-color: rgba(255, 255, 255, 0.05);
     }
-    
+
     body.dark-mode .empty-state {
       background-color: #1e1e1e;
       border-color: #333;
     }
-    
+
     body.dark-mode .empty-state i,
     body.dark-mode .empty-state h4 {
       color: #666;
     }
-    
+
     .dark-mode-toggle {
       position: fixed;
       bottom: 20px;
@@ -444,21 +454,22 @@ $stmt->close();
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
       transition: all var(--transition-speed);
     }
-    
+
     .dark-mode-toggle:hover {
       transform: scale(1.1);
     }
   </style>
 </head>
+
 <body>
   <div class="container">
-      <?php include 'menu.php'; ?>
+    <?php include 'menu.php'; ?>
 
     <div class="row justify-content-center">
       <div class="col-lg-10">
         <div class="location-container animate__animated animate__fadeIn">
           <h2 class="section-title">Gestión de Ubicaciones</h2>
-          
+
           <!-- Tabla de ubicaciones -->
           <div class="card-scroll">
             <?php if (count($markers) > 0): ?>
@@ -478,9 +489,9 @@ $stmt->close();
                         <td><?= $index + 1 ?></td>
                         <td id="nombre-<?= $marker['id'] ?>"><?= $marker['name'] ?></td>
                         <td id="imagen-<?= $marker['id'] ?>">
-                          <img src="<?= $marker['image'] ?>" alt="<?= $marker['name'] ?>" 
-                               class="img-fluid location-img" 
-                               onclick="mostrarVistaPrevia('<?= $marker['image'] ?>', '<?= $marker['name'] ?>')">
+                          <img src="<?= $marker['image'] ?>" alt="<?= $marker['name'] ?>"
+                            class="img-fluid location-img"
+                            onclick="mostrarVistaPrevia('<?= $marker['image'] ?>', '<?= $marker['name'] ?>')">
                         </td>
                         <td>
                           <button class="btn btn-primary btn-sm" onclick="editarUbicacion(<?= $marker['id'] ?>)">
@@ -507,72 +518,87 @@ $stmt->close();
       </div>
     </div>
   </div>
-  
-  
+
+
   <!-- Vista previa de imagen -->
   <div class="img-preview-overlay" id="imgPreviewOverlay">
     <div class="preview-close" id="previewClose">
       <i class="fas fa-times"></i>
     </div>
     <div class="img-preview-content">
-      <img id="previewImage" src="" alt="">
+      <img id="previewImage" src="" alt="Vista previa">
     </div>
   </div>
-  
+
   <!-- Loader para operaciones -->
   <div class="loader-overlay" id="loaderOverlay">
     <div class="loader"></div>
   </div>
-  
+
   <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.5/sweetalert2.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-  
+
   <script>
-    
-    
     function initImagePreview() {
       const overlay = document.getElementById('imgPreviewOverlay');
       const closeBtn = document.getElementById('previewClose');
-      
-      // Cerrar vista previa al hacer clic en el botón de cierre
-      closeBtn.addEventListener('click', function() {
+      const previewImg = document.getElementById('previewImage');
+
+      // 1. FUNCIÓN PARA CERRAR
+      const closePreview = () => {
         overlay.classList.remove('active');
+      };
+
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Evita que el clic se propague al overlay
+        closePreview();
       });
-      
-      // Cerrar vista previa al hacer clic fuera de la imagen
-      overlay.addEventListener('click', function(e) {
+
+      overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
-          overlay.classList.remove('active');
+          closePreview();
         }
       });
+
+      // 2. LÓGICA PARA ABRIR (Ejemplo con cualquier imagen que tenga clase 'thumb')
+      // Debes llamar a esto para que el overlay se muestre
+      document.querySelectorAll('.thumb').forEach(img => {
+        img.addEventListener('click', () => {
+          previewImg.src = img.src;
+          overlay.classList.add('active');
+        });
+      });
     }
-    
+
+    // ¡IMPORTANTE! Llama a la función cuando cargue el DOM
+    document.addEventListener('DOMContentLoaded', initImagePreview);
+
     function mostrarVistaPrevia(imagenUrl, nombre) {
       const overlay = document.getElementById('imgPreviewOverlay');
       const previewImage = document.getElementById('previewImage');
-      
+
       previewImage.src = imagenUrl;
       previewImage.alt = nombre;
-      
+
       overlay.classList.add('active');
     }
-    
+
     function mostrarLoader() {
       document.getElementById('loaderOverlay').classList.add('active');
     }
-    
+
     function ocultarLoader() {
       document.getElementById('loaderOverlay').classList.remove('active');
     }
-    
+
     function editarUbicacion(id) {
       const nombreTd = document.getElementById('nombre-' + id);
       const imagenTd = document.getElementById('imagen-' + id);
       const nombreActual = nombreTd.textContent;
       const imagenActual = imagenTd.querySelector('img').src;
-      
+
       // Usar SweetAlert2 para una interfaz de edición mejorada
       Swal.fire({
         title: 'Editar ubicación',
@@ -604,59 +630,59 @@ $stmt->close();
         if (result.isConfirmed) {
           const nuevoNombre = result.value.nombre;
           const nuevaImagen = result.value.imagen;
-          
+
           mostrarLoader();
-          
+
           fetch('editar_mapa.php', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: `action=editar&id=${id}&name=${encodeURIComponent(nuevoNombre)}&image=${encodeURIComponent(nuevaImagen)}`
-          })
-          .then(res => res.json())
-          .then(data => {
-            ocultarLoader();
-            
-            if (data.success) {
-              nombreTd.textContent = nuevoNombre;
-              const img = imagenTd.querySelector('img');
-              img.src = nuevaImagen;
-              img.alt = nuevoNombre;
-              
-              // Notificar éxito
-              Swal.fire({
-                icon: 'success',
-                title: '¡Actualizado!',
-                text: 'La ubicación ha sido actualizada correctamente.',
-                timer: 2000,
-                showConfirmButton: false
-              });
-              
-              // Recargar la página para actualizar el mapa
-              setTimeout(() => {
-                window.location.reload();
-              }, 2000);
-            } else {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+              },
+              body: `action=editar&id=${id}&name=${encodeURIComponent(nuevoNombre)}&image=${encodeURIComponent(nuevaImagen)}`
+            })
+            .then(res => res.json())
+            .then(data => {
+              ocultarLoader();
+
+              if (data.success) {
+                nombreTd.textContent = nuevoNombre;
+                const img = imagenTd.querySelector('img');
+                img.src = nuevaImagen;
+                img.alt = nuevoNombre;
+
+                // Notificar éxito
+                Swal.fire({
+                  icon: 'success',
+                  title: '¡Actualizado!',
+                  text: 'La ubicación ha sido actualizada correctamente.',
+                  timer: 2000,
+                  showConfirmButton: false
+                });
+
+                // Recargar la página para actualizar el mapa
+                setTimeout(() => {
+                  window.location.reload();
+                }, 2000);
+              } else {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Error',
+                  text: 'No se pudo actualizar la ubicación.',
+                });
+              }
+            })
+            .catch(error => {
+              ocultarLoader();
               Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: 'No se pudo actualizar la ubicación.',
+                text: 'Ocurrió un error de red.',
               });
-            }
-          })
-          .catch(error => {
-            ocultarLoader();
-            Swal.fire({
-              icon: 'error',
-              title: 'Error',
-              text: 'Ocurrió un error de red.',
             });
-          });
         }
       });
     }
-    
+
     function eliminarUbicacion(id) {
       // Confirmar eliminación con SweetAlert2
       Swal.fire({
@@ -671,72 +697,73 @@ $stmt->close();
       }).then((result) => {
         if (result.isConfirmed) {
           mostrarLoader();
-          
+
           fetch('editar_mapa.php', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: `action=eliminar&id=${id}`
-          })
-          .then(res => res.json())
-          .then(data => {
-            ocultarLoader();
-            
-            if (data.success) {
-              const fila = document.getElementById('fila-' + id);
-              fila.classList.add('fade-out');
-              
-              // Esperar a que termine la animación antes de eliminar
-              setTimeout(() => {
-                fila.remove();
-                
-                // Verificar si la tabla está vacía
-                const tbody = document.querySelector('tbody');
-                if (tbody.children.length === 0) {
-                  const tablaContainer = document.querySelector('.table-responsive');
-                  tablaContainer.innerHTML = `
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+              },
+              body: `action=eliminar&id=${id}`
+            })
+            .then(res => res.json())
+            .then(data => {
+              ocultarLoader();
+
+              if (data.success) {
+                const fila = document.getElementById('fila-' + id);
+                fila.classList.add('fade-out');
+
+                // Esperar a que termine la animación antes de eliminar
+                setTimeout(() => {
+                  fila.remove();
+
+                  // Verificar si la tabla está vacía
+                  const tbody = document.querySelector('tbody');
+                  if (tbody.children.length === 0) {
+                    const tablaContainer = document.querySelector('.table-responsive');
+                    tablaContainer.innerHTML = `
                     <div class="empty-state">
                       <i class="fas fa-map-marker-alt"></i>
                       <h4>No hay ubicaciones disponibles</h4>
                       <p class="text-muted">Aún no se han añadido ubicaciones al mapa.</p>
                     </div>
                   `;
-                }
-              }, 500);
-              
-              // Notificar éxito
-              Swal.fire({
-                icon: 'success',
-                title: '¡Eliminado!',
-                text: 'La ubicación ha sido eliminada correctamente.',
-                timer: 2000,
-                showConfirmButton: false
-              });
-              
-              // Recargar la página para actualizar el mapa
-              setTimeout(() => {
-                window.location.reload();
-              }, 2000);
-            } else {
+                  }
+                }, 500);
+
+                // Notificar éxito
+                Swal.fire({
+                  icon: 'success',
+                  title: '¡Eliminado!',
+                  text: 'La ubicación ha sido eliminada correctamente.',
+                  timer: 2000,
+                  showConfirmButton: false
+                });
+
+                // Recargar la página para actualizar el mapa
+                setTimeout(() => {
+                  window.location.reload();
+                }, 2000);
+              } else {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Error',
+                  text: 'No se pudo eliminar la ubicación.',
+                });
+              }
+            })
+            .catch(error => {
+              ocultarLoader();
               Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: 'No se pudo eliminar la ubicación.',
+                text: 'Ocurrió un error de red.',
               });
-            }
-          })
-          .catch(error => {
-            ocultarLoader();
-            Swal.fire({
-              icon: 'error',
-              title: 'Error',
-              text: 'Ocurrió un error de red.',
             });
-          });
         }
       });
     }
   </script>
 </body>
+
 </html>
