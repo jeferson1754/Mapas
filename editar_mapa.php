@@ -508,10 +508,6 @@ $stmt->close();
     </div>
   </div>
   
-  <!-- Botón de modo oscuro -->
-  <button class="dark-mode-toggle" id="darkModeToggle">
-    <i class="fas fa-moon"></i>
-  </button>
   
   <!-- Vista previa de imagen -->
   <div class="img-preview-overlay" id="imgPreviewOverlay">
@@ -535,36 +531,6 @@ $stmt->close();
   
   <script>
     
-    function initDarkMode() {
-      const darkModeToggle = document.getElementById('darkModeToggle');
-      const icon = darkModeToggle.querySelector('i');
-      
-      // Verificar preferencia guardada
-      const isDarkMode = localStorage.getItem('darkMode') === 'true';
-      
-      // Aplicar modo oscuro si está activado
-      if (isDarkMode) {
-        document.body.classList.add('dark-mode');
-        icon.classList.remove('fa-moon');
-        icon.classList.add('fa-sun');
-      }
-      
-      // Cambiar entre modos
-      darkModeToggle.addEventListener('click', function() {
-        document.body.classList.toggle('dark-mode');
-        
-        // Guardar preferencia
-        if (document.body.classList.contains('dark-mode')) {
-          localStorage.setItem('darkMode', 'true');
-          icon.classList.remove('fa-moon');
-          icon.classList.add('fa-sun');
-        } else {
-          localStorage.setItem('darkMode', 'false');
-          icon.classList.remove('fa-sun');
-          icon.classList.add('fa-moon');
-        }
-      });
-    }
     
     function initImagePreview() {
       const overlay = document.getElementById('imgPreviewOverlay');
