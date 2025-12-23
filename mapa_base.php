@@ -1,30 +1,22 @@
 <?php
-// Incluir archivo de conexión a la base de datos
 include 'bd.php';
 
-// Preparar la consulta SQL de manera segura
+// Consulta SQL
 $sql = "SELECT lat, lng, name, address FROM markers";
-
-// Preparar y ejecutar la consulta usando consultas preparadas
 $stmt = $conexion->prepare($sql);
 $stmt->execute();
-
-// Obtener el resultado
 $result = $stmt->get_result();
 $rowCount = $result->num_rows;
 
-// Almacenar los marcadores en un array para usarlos en JavaScript
 $markers = [];
 while ($row = $result->fetch_assoc()) {
   $markers[] = [
     'lat' => (float)$row['lat'],
     'lng' => (float)$row['lng'],
     'name' => htmlspecialchars($row['name']),
-    'image' => htmlspecialchars($row['address']) // Aquí ahora es la ruta de la imagen
+    'image' => htmlspecialchars($row['address'])
   ];
 }
-
-// Cerrar la consulta
 $stmt->close();
 ?>
 <!DOCTYPE html>
@@ -33,485 +25,241 @@ $stmt->close();
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mapa de Ubicaciones</title>
+  <title>Mapa de Ubicaciones Premium</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
+    :root {
+      --primary-color: #4361ee;
+      --secondary-color: #3f37c9;
+      --bg-light: #f8f9fa;
     }
 
     body {
-      padding: 20px;
-      background-color: #f5f5f5;
+      background-color: var(--bg-light);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
-    .container {
-      max-width: 1500px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    h1 {
-      color: #2c3e50;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-
-    /* Estilos básicos y reseteo */
-    .info-panel {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      max-width: 100%;
-      margin: 0 auto;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      background-color: #ffffff;
-    }
-
-    /* Contador de ubicaciones */
-    .location-counter {
-      display: flex;
-      align-items: center;
-      padding: 12px 16px;
-      border-radius: 6px;
-      margin-bottom: 15px;
-      font-weight: 500;
-      color: #ffffff;
-      transition: all 0.3s ease;
-    }
-
-    .location-counter i {
-      margin-right: 10px;
-      font-size: 18px;
-    }
-
-    .location-counter.success {
-      background-color: #27ae60;
-    }
-
-    .location-counter.error {
-      background-color: #e74c3c;
-    }
-
-    /* Descripción del panel */
-    .panel-description {
-      margin-bottom: 20px;
-      color: #555;
-      font-size: 16px;
-      line-height: 1.5;
-    }
-
-    /* Contenedor de tabla con scroll horizontal */
-    .locations-table-container {
-      overflow-x: auto;
-      margin-bottom: 15px;
-      border-radius: 6px;
-      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
-    }
-
-    /* Estilos de tabla */
-    .locations-table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-      overflow: hidden;
-    }
-
-    .locations-table th,
-    .locations-table td {
-      padding: 12px 15px;
-      border-bottom: 1px solid #eaeaea;
-    }
-
-    .locations-table th {
-      background-color: #f5f5f5;
-      font-weight: 600;
-      color: #333;
-      text-transform: uppercase;
-      font-size: 14px;
-      letter-spacing: 0.5px;
-    }
-
-    .locations-table tr:hover {
-      background-color: #f9f9f9;
-    }
-
-    .locations-table tr:last-child td {
-      border-bottom: none;
-    }
-
-    /* Imágenes en la tabla */
-    .location-image img {
-      width: 70px;
-      height: 70px;
-      object-fit: cover;
-      border-radius: 6px;
-      border: 2px solid #eaeaea;
-      transition: transform 0.2s;
-    }
-
-    .location-image img:hover {
-      transform: scale(1.05);
-    }
-
-    /* Nombre de ubicación */
-    .location-name {
-      font-weight: 500;
-      color: #2c3e50;
-    }
-
-    /* Botón de acción */
-    .btn-center {
-      padding: 8px 14px;
-      background-color: #3498db;
-      color: white;
+    .main-card {
       border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: background-color 0.3s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .btn-center i {
-      margin-right: 6px;
-    }
-
-    .btn-center:hover {
-      background-color: #2980b9;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .info-panel {
-        padding: 15px;
-      }
-
-      .locations-table th,
-      .locations-table td {
-        padding: 10px;
-      }
-
-      .location-image img {
-        width: 50px;
-        height: 50px;
-      }
-
-      .btn-center {
-        padding: 6px 10px;
-        font-size: 13px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .location-counter {
-        flex-direction: column;
-        text-align: center;
-        padding: 10px;
-      }
-
-      .location-counter i {
-        margin-right: 0;
-        margin-bottom: 5px;
-      }
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     }
 
     #mapa {
-      width: 100%;
       height: 500px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
+      width: 100%;
+      z-index: 1;
     }
 
-    .location-counter {
-      display: inline-block;
-      padding: 8px 15px;
-      border-radius: 20px;
-      font-weight: bold;
-      color: white;
-      background-color: #3498db;
-      margin-bottom: 15px;
+    /* Lista de ubicaciones estilo Sidebar */
+    .location-list-container {
+      max-height: 500px;
+      overflow-y: auto;
+      background: white;
     }
 
-    .map-controls {
-      margin-top: 15px;
+    .location-item {
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 4px solid transparent;
+    }
+
+    .location-item:hover {
+      background-color: #f1f4ff;
+      border-left-color: var(--primary-color);
+    }
+
+    .img-thumb-custom {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    /* Popups de Leaflet */
+    .leaflet-popup-content-wrapper {
+      border-radius: 12px;
+      padding: 0;
+    }
+
+    .custom-popup img {
+      border-radius: 8px 8px 0 0;
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+    }
+
+    .popup-info {
+      padding: 10px;
       text-align: center;
     }
 
-    .btn {
-      padding: 8px 15px;
-      margin: 5px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      background-color: #3498db;
-      color: white;
-      font-weight: bold;
-      transition: background-color 0.3s;
-    }
-
-    .btn:hover {
-      background-color: #2980b9;
-    }
-
-    .btn i {
-      margin-right: 5px;
-    }
-
-    @media (max-width: 768px) {
+    /* Ajustes Responsivos */
+    @media (max-width: 991.98px) {
       #mapa {
         height: 350px;
       }
 
-      .container {
-        padding: 10px;
+      .location-list-container {
+        max-height: 400px;
       }
-    }
-
-
-
-
-    .popup-header {
-      color: black;
-      font-size: 20px;
-      padding: 10px 15px;
-      font-weight: bold;
-      text-align: center;
-    }
-
-    .popup-body {
-      text-align: center;
-    }
-
-    .popup-img {
-      margin-top: 10px;
     }
   </style>
 </head>
 
 <body>
-  <div class="container">
+
+  <div class="container py-4">
     <?php include 'menu.php'; ?>
 
-    <div class="row">
-      <div class="col-12">
+    <div class="main-card card">
+      <div class="card-header bg-white py-3 border-bottom">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div>
+            <h4 class="mb-0 fw-bold text-dark">
+              <i class="fas fa-map text-primary me-2"></i>Explorar Ubicaciones
+            </h4>
+            <small class="text-muted">Visualiza y gestiona tus puntos registrados</small>
+          </div>
+          <span class="badge bg-primary rounded-pill px-3 py-2">
+            <i class="fas fa-map-marker-alt me-1"></i> <?php echo $rowCount; ?> Registros
+          </span>
+        </div>
+      </div>
 
-        <!-- Encabezado -->
-        <div class="card shadow-sm">
-          <div class="card-header bg-primary text-white">
-            <div class="d-flex justify-content-between align-items-center">
-              <h2 class="fw-bold m-0"><i class="fas fa-map me-2"></i> Mapa de Ubicaciones</h2>
+      <div class="bg-light p-2 d-flex gap-2 border-bottom overflow-x-auto">
+        <button class="btn btn-sm btn-white border shadow-sm" id="btnReset"><i class="fas fa-home"></i></button>
+        <button class="btn btn-sm btn-white border shadow-sm" id="btnZoomIn"><i class="fas fa-plus"></i></button>
+        <button class="btn btn-sm btn-white border shadow-sm" id="btnZoomOut"><i class="fas fa-minus"></i></button>
+      </div>
+
+      <div class="row g-0">
+        <div class="col-lg-8 border-end">
+          <div id="mapa"></div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="location-list-container">
+            <div class="list-group list-group-flush">
               <?php if ($rowCount > 0): ?>
-                <div class="badge bg-success fs-6 animate__animated animate__pulse">
-                  <i class="fas fa-map-marker-alt me-1"></i>
-                  <?php echo $rowCount; ?> Ubicación<?php echo $rowCount != 1 ? 'es' : ''; ?>
-                </div>
+                <?php foreach ($markers as $index => $marker): ?>
+                  <div class="list-group-item location-item p-3"
+                    onclick="centrarEn(<?php echo $marker['lat']; ?>, <?php echo $marker['lng']; ?>, '<?php echo addslashes($marker['name']); ?>')">
+                    <div class="d-flex align-items-center gap-3">
+                      <img src="<?php echo $marker['image']; ?>" class="img-thumb-custom shadow-sm">
+                      <div class="flex-grow-1">
+                        <h6 class="mb-1 fw-bold text-dark"><?php echo $marker['name']; ?></h6>
+                        <p class="mb-0 text-muted small" id="direccion-<?php echo $index; ?>">
+                          <i class="fas fa-spinner fa-spin"></i> Obteniendo dirección...
+                        </p>
+                      </div>
+                      <i class="fas fa-chevron-right text-light"></i>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
               <?php else: ?>
-                <div class="badge bg-danger fs-6">
-                  <i class="fas fa-exclamation-triangle me-1"></i>
-                  No se encontraron ubicaciones
+                <div class="p-5 text-center">
+                  <i class="fas fa-map-pin fa-3x text-light mb-3"></i>
+                  <p class="text-muted">No hay ubicaciones para mostrar</p>
                 </div>
               <?php endif; ?>
             </div>
           </div>
-
-          <!-- Controles del mapa -->
-          <div class="px-3 py-2 border-bottom bg-light">
-            <div class="d-flex gap-2 flex-wrap justify-content-center justify-content-md-start">
-              <button class="btn btn-outline-primary" id="btnZoomIn"><i class="fas fa-search-plus me-1"></i>Acercar</button>
-              <button class="btn btn-outline-primary" id="btnZoomOut"><i class="fas fa-search-minus me-1"></i>Alejar</button>
-              <button class="btn btn-outline-secondary" id="btnReset"><i class="fas fa-sync me-1"></i>Reiniciar vista</button>
-            </div>
-          </div>
-
-          <!-- Cuerpo -->
-          <div class="card-body p-0">
-            <div class="row g-0">
-
-              <!-- Mapa -->
-              <div class="col-lg-8">
-                <div id="mapa" class="w-100" style="height: 500px;"></div>
-              </div>
-
-              <!-- Lista -->
-              <div class="col-lg-4 border-start">
-                <?php if ($rowCount > 0): ?>
-                  <div class="p-3">
-                    <h5 class="fw-bold mb-3"><i class="fas fa-list-ul me-2"></i>Listado de ubicaciones</h5>
-
-                    <div class="table-responsive">
-                      <table class="table table-hover location-table align-middle mb-0">
-                        <thead class="table-light">
-                          <tr>
-                            <th class="text-center">Ubicación</th>
-                            <th class="text-center">Imagen</th>
-                            <th class="text-center">Dirección</th> <!-- Nueva columna -->
-                            <th class="text-center">Acción</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <?php foreach ($markers as $index => $marker): ?>
-                            <tr class="location-item" data-lat="<?php echo $marker['lat']; ?>" data-lng="<?php echo $marker['lng']; ?>">
-                              <td class="text-center"><?php echo $marker['name']; ?></td>
-                              <td class="text-center">
-                                <img src="<?php echo $marker['image']; ?>" class="img-thumbnail" alt="imagen" width="50">
-                              </td>
-                              <td class="text-center" id="direccion-<?php echo $index; ?>">Cargando...</td> <!-- Nueva celda para la dirección -->
-                              <td class="text-center">
-                                <button class="btn btn-sm btn-outline-info" onclick="centrarEn(<?php echo $marker['lat']; ?>, <?php echo $marker['lng']; ?>, '<?php echo addslashes($marker['name']); ?>', <?php echo $index; ?>)">
-                                  <i class="fas fa-crosshairs me-1"></i>Ver
-                                </button>
-                              </td>
-                            </tr>
-                          <?php endforeach; ?>
-                        </tbody>
-                      </table>
-
-                      <script>
-                        // Función para obtener la dirección utilizando latitud y longitud
-                        function obtenerDireccion(lat, lng, index) {
-                          fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
-                            .then(res => res.json())
-                            .then(data => {
-                              const address = data.address;
-                              let direccion = `
-                                ${address.road ? address.road + ' ' + (address.house_number || '') : ''} 
-                                ${address.city || address.town || address.village || ' '}
-                              `;
-
-                              // Actualizar la dirección en la tabla
-                              document.getElementById('direccion-' + index).innerHTML = direccion;
-                            })
-                            .catch(error => {
-                              console.error('Error al obtener dirección:', error);
-                              document.getElementById('direccion-' + index).innerHTML = 'Dirección no disponible';
-                            });
-                        }
-
-                        // Función para centrar en el marcador y cargar la dirección
-                        function centrarEn(lat, lng, name, index) {
-                          // Centramos el mapa en las coordenadas
-                          mapa.setView([lat, lng], 16);
-
-                          // Llamamos a la función para obtener la dirección
-                          obtenerDireccion(lat, lng, index);
-                        }
-
-                        // Llamar a la función obtenerDirección para cada marcador al cargar la página
-                        <?php foreach ($markers as $index => $marker): ?>
-                          obtenerDireccion(<?php echo $marker['lat']; ?>, <?php echo $marker['lng']; ?>, <?php echo $index; ?>);
-                        <?php endforeach; ?>
-                      </script>
-
-                    </div>
-                  </div>
-                <?php else: ?>
-                  <div class="p-4 text-center">
-                    <div class="alert alert-warning">
-                      <i class="fas fa-exclamation-triangle me-2"></i>
-                      No hay ubicaciones disponibles para mostrar
-                    </div>
-                    <p class="mb-0">Añade ubicaciones para visualizarlas en el mapa.</p>
-                  </div>
-                <?php endif; ?>
-              </div>
-
-            </div>
-          </div>
         </div>
-
       </div>
     </div>
+  </div>
 
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const initialCoords = [-33.4889, -70.6693];
+    const initialZoom = 12;
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script>
-      // Coordenadas iniciales (Santiago de Chile)
-      const initialCoords = [-33.4889, -70.6693];
-      const initialZoom = 11;
+    // Inicializar Mapa
+    const mapa = L.map('mapa', {
+      zoomControl: false
+    }).setView(initialCoords, initialZoom);
 
-      // Crear el mapa
-      const mapa = L.map('mapa', {
-        zoomControl: false,
-        minZoom: 3,
-        maxZoom: 18
-      }).setView(initialCoords, initialZoom);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(mapa);
 
-      // Capa base
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 19
-      }).addTo(mapa);
+    const dbMarkers = <?php echo json_encode($markers); ?>;
+    const markersGroup = L.featureGroup();
 
-      // Marcador fijo en Santiago de Chile
-      const santiagoIcon = L.icon({
-        iconUrl: 'https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/images/marker-icon.png',
-        shadowUrl: 'https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
+    // Icono Personalizado
+    const customIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/2776/2776067.png',
+      iconSize: [38, 38],
+      iconAnchor: [19, 38],
+      popupAnchor: [0, -34]
+    });
+
+    dbMarkers.forEach((point, index) => {
+      const popupContent = `
+            <div class="custom-popup">
+                <img src="${point.image}">
+                <div class="popup-info">
+                    <strong style="display:block; font-size:14px;">${point.name}</strong>
+                    <small class="text-muted">Lat: ${point.lat}</small>
+                </div>
+            </div>`;
+
+      const marker = L.marker([point.lat, point.lng], {
+          icon: customIcon
+        })
+        .bindPopup(popupContent);
+
+      marker.addTo(markersGroup);
+
+      // Reverse Geocoding (Nominatim)
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${point.lat}&lon=${point.lng}&format=json`)
+        .then(res => res.json())
+        .then(data => {
+          const display = data.display_name.split(',').slice(0, 2).join(',');
+          document.getElementById('direccion-' + index).innerHTML = `<i class="fas fa-map-marker-alt me-1"></i> ${display}`;
+        })
+        .catch(() => {
+          document.getElementById('direccion-' + index).innerText = 'Ubicación registrada';
+        });
+    });
+
+    markersGroup.addTo(mapa);
+
+    // Funciones de Navegación
+    function centrarEn(lat, lng, name) {
+      mapa.flyTo([lat, lng], 16, {
+        animate: true,
+        duration: 1.5
+      });
+      // Abrir popup automáticamente al hacer clic en la lista
+      markersGroup.eachLayer(layer => {
+        if (layer.getLatLng().lat === lat && layer.getLatLng().lng === lng) {
+          layer.openPopup();
+        }
       });
 
-
-      // Cargar marcadores desde PHP
-      const dbMarkers = <?php echo json_encode($markers); ?>;
-
-      const markersGroup = L.layerGroup();
-
-      dbMarkers.forEach(function(point) {
-        const popupContent = `
-        <div class="custom-popup">
-          <div class="popup-header">${point.name}</div>
-          <div class="popup-body">
-            <img src="${point.image}" class="popup-img" alt="${point.name}" width="150">
-          </div>
-        </div>
-      `;
-
-
-
-        L.marker([point.lat, point.lng])
-          .bindPopup(popupContent)
-          .addTo(markersGroup);
-      });
-
-      markersGroup.addTo(mapa);
-
-
-      function centrarEn(lat, lng) {
-        mapa.setView([lat, lng], 16); // Ajusta el zoom si deseas otro nivel
+      // En móviles, hacer scroll hacia el mapa
+      if (window.innerWidth < 992) {
+        document.getElementById('mapa').scrollIntoView({
+          behavior: 'smooth'
+        });
       }
+    }
 
-      // Botones de control
-      document.getElementById('btnZoomIn').addEventListener('click', function() {
-        mapa.zoomIn();
-      });
+    // Botones de Control
+    document.getElementById('btnZoomIn').onclick = () => mapa.zoomIn();
+    document.getElementById('btnZoomOut').onclick = () => mapa.zoomOut();
+    document.getElementById('btnReset').onclick = () => mapa.setView(initialCoords, initialZoom);
 
-      document.getElementById('btnZoomOut').addEventListener('click', function() {
-        mapa.zoomOut();
-      });
-
-      document.getElementById('btnReset').addEventListener('click', function() {
-        mapa.setView(initialCoords, initialZoom);
-      });
-
-      // Ajustar mapa en redimensionamiento
-      window.addEventListener('resize', function() {
-        mapa.invalidateSize();
-      });
-    </script>
+    // Ajustar mapa
+    window.onload = () => mapa.invalidateSize();
+  </script>
 
 </body>
 
